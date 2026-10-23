@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MY SHOP | Online Shopping</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Noto Sans Bengali",sans-serif;background:#f5f5f5;color:#222}
+header{background:#f85606;color:white;padding:15px 4%;position:sticky;top:0;z-index:5}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.logo{font-size:24px;font-weight:bold}
+button{cursor:pointer;border:0;border-radius:6px;padding:11px 14px;font-weight:bold}
+button:disabled{opacity:.5;cursor:not-allowed}
+.admin-btn{background:white;color:#e94e00;margin:2px}
+.search{margin-top:12px}
+.search input{width:100%;padding:12px;border:0;border-radius:5px;font-size:16px}
+.banner{margin:18px auto;padding:30px 18px;max-width:1200px;background:linear-gradient(120deg,#ff7b22,#ffb347);color:white;border-radius:10px}
+.banner h1{margin:0 0 8px;font-size:27px}
+main{max-width:1200px;margin:auto;padding:0 14px 35px}
+.section-title{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.products{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card{background:white;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px #00000010}
+.card img{width:100%;height:180px;object-fit:contain}
+.info{padding:12px}
+.info h3{font-size:16px;margin:0 0 8px;overflow-wrap:anywhere}
+.price{color:#f4511e;font-size:20px;font-weight:bold}
+.desc{font-size:13px;color:#666;white-space:pre-wrap}
+.add,.primary{background:#f85606;color:white}
+.add{width:100%;margin-top:8px}
+.empty{background:white;padding:35px 15px;text-align:center;border-radius:8px;color:#666}
+footer{text-align:center;padding:25px;background:#222;color:#ddd}
+.modal{display:none;position:fixed;inset:0;background:#0009;z-index:20;overflow:auto;padding:12px}
+.panel{background:white;border-radius:12px;max-width:650px;margin:15px auto;padding:20px}
+.panel h2{margin-top:0}
+.field{margin:12px 0}
+.field label{display:block;font-weight:bold;margin-bottom:6px}
+.field input,.field textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:7px;font:inherit}
+.field textarea{min-height:65px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.secondary{background:#e8e8e8;color:#222}
+.delete{background:#d93025;color:white}
+.small{font-size:12px;color:#666;line-height:1.7}
+.admin-item{display:flex;gap:8px;align-items:center;border-bottom:1px solid #eee;padding:10px 0;flex-wrap:wrap}
+.admin-item img{width:48px;height:48px;object-fit:contain}
+.grow{flex:1;min-width:0;overflow-wrap:anywhere}
+.paycard{display:block;border:2px solid #ddd;border-radius:10px;padding:13px;margin:10px 0}
+.paycard:has(input:checked){border-color:#d81b60;background:#fff5f8}
+.paycard input{width:auto}
+.bkash{color:#d81b60}
+.nagad{color:#e65c16}
+.paynumber{font-size:22px;font-weight:bold;margin:8px 0}
+.payinfo{padding:12px;background:#fff5e8;border-radius:8px;line-height:1.8;font-size:14px}
+.submitpay{background:#128c7e;color:white;width:100%;margin-top:12px}
+.copy{background:#eee;width:100%;margin:8px 0}
+.total{font-size:21px;color:#e94e00;font-weight:bold}
+@media(max-width:850px){.products{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){
+.products{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.card img{height:140px}.info{padding:9px}.price{font-size:17px}
+.logo{font-size:20px}.banner h1{font-size:22px}
+}
+</style>
+</head>
+<body>
+
+<header>
+ <div class="top">
+  <div class="logo">🛍️ MY SHOP</div>
+  <div>
+   <button class="admin-btn" onclick="openAdmin()">🔐 Admin</button>
+   <button class="admin-btn" onclick="showCart()">🛒 Cart (<span id="cartCount">0</span>)</button>
+  </div>
+ </div>
+ <div class="search">
+  <input id="search" placeholder="পণ্যের নাম দিয়ে খুঁজুন..." oninput="renderProducts()">
+ </div>
+</header>
+
+<div class="banner">
+ <h1>স্বাগতম আমাদের অনলাইন শপে!</h1>
+ <p>পছন্দের পণ্য বেছে নিন এবং বিকাশ বা নগদে পেমেন্টের তথ্য পাঠান।</p>
+</div>
+
+<main>
+ <div class="section-title">
+  <h2>✨ সকল পণ্য</h2><span id="productCount">০টি পণ্য</span>
+ </div>
+ <div id="products" class="products"></div>
+</main>
+
+<footer>
+ <p>MY SHOP — Online Shopping</p>
+ <p>© 2026 My Shop</p>
+</footer>
+
+<!-- ADMIN LOGIN -->
+<div class="modal" id="loginModal">
+ <div class="panel">
+  <h2>🔐 Admin Login</h2>
+  <form onsubmit="login(event)">
+   <div class="field">
+    <label>পাসওয়ার্ড</label>
+    <input id="password" type="password" required>
+   </div>
+   <p id="loginError" style="color:red"></p>
+   <div class="actions">
+    <button class="primary">লগইন</button>
+    <button type="button" class="secondary" onclick="closeModal('loginModal')">বন্ধ</button>
+   </div>
+  </form>
+ </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div class="modal" id="adminModal">
+ <div class="panel">
+  <h2>⚙️ Admin Dashboard</h2>
+  <form id="productForm" onsubmit="saveProduct(event)">
+   <input type="hidden" id="editId">
+   <div class="field"><label>পণ্যের নাম *</label><input id="pname" required maxlength="120"></div>
+   <div class="field"><label>দাম (৳) *</label><input id="price" type="number" min="0" step=".01" required></div>
+   <div class="field">
+    <label>পণ্যের ছবি *</label><input id="photo" type="file" accept="image/*">
+    <p class="small">ছবি ২ MB-এর মধ্যে রাখুন।</p>
+    <img id="preview" alt="Preview" style="display:none;max-width:130px;max-height:130px">
+   </div>
+   <div class="field"><label>বিবরণ</label><textarea id="description"></textarea></div>
+   <div class="field"><label>স্টক</label><input id="stock" type="number" min="0" step="1" value="10" required></div>
+   <div class="actions">
+    <button class="primary">💾 পণ্য সেভ</button>
+    <button type="button" class="secondary" onclick="resetForm()">ফর্ম পরিষ্কার</button>
+   </div>
+  </form>
+  <hr><h3>📦 পণ্য পরিচালনা</h3>
+  <div id="adminProducts"></div>
+  <p id="adminMessage"></p>
+  <div class="actions" style="margin-top:15px">
+   <button class="secondary" onclick="closeModal('adminModal')">বন্ধ</button>
+   <button class="delete" onclick="logout()">Logout</button>
+  </div>
+ </div>
+</div>
+
+<!-- CART -->
+<div class="modal" id="cartModal">
+ <div class="panel">
+  <h2>🛒 আপনার কার্ট</h2>
+  <div id="cartItems"></div>
+  <h3 id="cartTotal">মোট: ৳০</h3>
+  <button class="primary" style="width:100%" onclick="checkout()">Proceed to Payment / পেমেন্ট করুন</button>
+  <button class="secondary" style="width:100%;margin-top:8px" onclick="closeModal('cartModal')">কেনাকাটা চালিয়ে যান</button>
+ </div>
+</div>
+
+<!-- PAYMENT -->
+<div class="modal" id="paymentModal">
+ <div class="panel">
+  <h2>💳 পেমেন্ট</h2>
+  <p>পেমেন্ট পদ্ধতি বেছে নিয়ে নম্বর যাচাই করুন।</p>
+
+  <label class="paycard">
+   <input type="radio" name="method" value="বিকাশ (bKash)" checked>
+   <strong class="bkash">বিকাশ (bKash)</strong>
+   <div class="paynumber">01731088005</div>
+  </label>
+
+  <label class="paycard">
+   <input type="radio" name="method" value="নগদ (Nagad)">
+   <strong class="nagad">নগদ (Nagad)</strong>
+   <div class="paynumber">01818325741</div>
+   <span class="small">নম্বরটি নগদে চালু আছে কি না নিশ্চিত করুন।</span>
+  </label>
+
+  <button class="copy" type="button" onclick="copyNumber()">📋 নির্বাচিত নম্বর কপি করুন</button>
+
+  <div class="payinfo">
+   <strong>পেমেন্টের নিয়ম</strong><br>
+   ১. নির্বাচিত পেমেন্ট নম্বর যাচাই করুন।<br>
+   ২. পেমেন্ট সার্ভিসের নির্দেশনা অনুযায়ী টাকা পাঠান।<br>
+   ৩. Transaction ID লিখুন।<br>
+   ৪. WhatsApp-এ অর্ডারের তথ্য পাঠান।
+  </div>
+
+  <h3>অর্ডারের বিবরণ</h3>
+  <div id="paymentOrderSummary"></div>
+
+  <form id="paymentForm">
+   <div class="field"><label>ক্রেতার নাম *</label><input id="customer" required maxlength="80" placeholder="আপনার নাম"></div>
+   <div class="field"><label>অর্ডার নম্বর</label><input id="orderNo" readonly></div>
+   <div class="field"><label>মোট টাকা (৳)</label><input id="amount" readonly></div>
+   <div class="field"><label>Transaction ID *</label><input id="trxid" required maxlength="80" placeholder="Transaction ID লিখুন"></div>
+   <div class="field"><label>যে নম্বর থেকে টাকা পাঠিয়েছেন *</label><input id="sender" type="tel" required maxlength="20" placeholder="পেমেন্টের নম্বর"></div>
+   <div class="field"><label>ডেলিভারির ঠিকানা *</label><textarea id="address" required maxlength="500" placeholder="বাড়ি, এলাকা, থানা, জেলা"></textarea></div>
+   <div class="field"><label>অতিরিক্ত তথ্য (ঐচ্ছিক)</label><textarea id="note" maxlength="300"></textarea></div>
+   <button class="submitpay" type="submit">📲 WhatsApp-এ অর্ডার পাঠান</button>
+  </form>
+  <p class="small">WhatsApp-এ পাঠালেই পেমেন্ট নিশ্চিত হয় না। বিক্রেতাকে টাকা ও Transaction ID যাচাই করতে হবে। PIN বা OTP কখনো দেবেন না।</p>
+  <button class="secondary" style="width:100%" onclick="closeModal('paymentModal')">বন্ধ করুন</button>
+ </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = "@#@#@#";
+const BKASH_NUMBER = "01731088005";
+const NAGAD_NUMBER = "01818325741";
+const WHATSAPP_NUMBER = "8801732536930";
+
+let products = [];
+let cart = {};
+let isAdmin = false;
+let currentPhoto = "";
+let currentOrder = null;
+
+try {
+  products = JSON.parse(localStorage.getItem("myshop_products") || "[]");
+  if (!Array.isArray(products)) products = [];
+} catch(e) { products = []; }
+
+function persist(){
+  try {
+    localStorage.setItem("myshop_products", JSON.stringify(products));
+    return true;
+  } catch(e) {
+    alert("ডেটা সেভ হয়নি। ছবির সাইজ কমিয়ে আবার চেষ্টা করুন।");
+    return false;
+  }
+}
+
+function money(n){
+  return "৳" + Number(n || 0).toLocaleString("bn-BD");
+}
+
+function safeText(s){
+  return String(s ?? "").replace(/[&<>"']/g,c=>({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function renderProducts(){
+  const q = document.getElementById("search").value.trim().toLowerCase();
+  const filtered = products.filter(p =>
+    (p.name + " " + (p.description || "")).toLowerCase().includes(q)
+  );
+
+  document.getElementById("productCount").textContent =
+    products.length.toLocaleString("bn-BD") + "টি পণ্য";
+
+  const root = document.getElementById("products");
+  if(!filtered.length){
+    root.className = "";
+    root.innerHTML = `<div class="empty"><h3>${
+      products.length ? "কোনো পণ্য পাওয়া যায়নি" : "এখনো কোনো পণ্য যোগ করা হয়নি"
+    }</h3><p>${
+      products.length ? "অন্য নামে খুঁজুন।" : "অ্যাডমিন লগইন করে পণ্য যোগ করুন।"
+    }</p></div>`;
+    return;
+  }
+
+  root.className = "products";
+  root.innerHTML = filtered.map(p=>`
+    <article class="card">
+      <img src="${p.photo}" alt="${safeText(p.name)}" loading="lazy">
+      <div class="info">
+       <h3>${safeText(p.name)}</h3>
+       <div class="price">${money(p.price)}</div>
+       <p class="desc">${safeText(p.description || "")}</p>
+       <p class="small">স্টক: ${Number(p.stock)}</p>
+       <button class="add" onclick="addToCart('${p.id}')"
+        ${Number(p.stock)<=0?"disabled":""}>
+        ${Number(p.stock)<=0?"স্টক শেষ":"🛒 কার্টে যোগ করুন"}
+       </button>
+      </div>
+    </article>`).join("");
+}
+
+function openAdmin(){
+  if(isAdmin) showAdmin();
+  else {
+    document.getElementById("password").value="";
+    document.getElementById("loginError").textContent="";
+    document.getElementById("loginModal").style.display="block";
+  }
+}
+
+function login(e){
+  e.preventDefault();
+  if(document.getElementById("password").value === ADMIN_PASSWORD){
+    isAdmin=true;
+    closeModal("loginModal");
+    showAdmin();
+  } else {
+    document.getElementById("loginError").textContent="ভুল পাসওয়ার্ড!";
+  }
+}
+
+function showAdmin(){
+  document.getElementById("adminModal").style.display="block";
+  renderAdminProducts();
+}
+
+function logout(){
+  isAdmin=false;
+  resetForm();
+  closeModal("adminModal");
+}
+
+function closeModal(id){
+  document.getElementById(id).style.display="none";
+}
+
+document.getElementById("photo").addEventListener("change",function(){
+  const file=this.files[0];
+  if(!file) return;
+  if(!file.type.startsWith("image/")){
+    alert("ছবির ফাইল নির্বাচন করুন।");this.value="";return;
+  }
+  if(file.size>2*1024*1024){
+    alert("ছবির সাইজ ২ MB-এর কম রাখুন।");this.value="";return;
+  }
+  const reader=new FileReader();
+  reader.onload=()=>{
+    currentPhoto=reader.result;
+    document.getElementById("preview").src=currentPhoto;
+    document.getElementById("preview").style.display="block";
+  };
+  reader.readAsDataURL(file);
+});
+
+function saveProduct(e){
+  e.preventDefault();
+  if(!isAdmin) return;
+
+  const id=document.getElementById("editId").value;
+  const old=products.find(p=>p.id===id);
+  const photo=currentPhoto || (old ? old.photo : "");
+  if(!photo){alert("পণ্যের ছবি নির্বাচন করুন।");return;}
+
+  const p={
+    id:id || (Date.now().toString(36)+Math.random().toString(36).slice(2,7)),
+    name:document.getElementById("pname").value.trim(),
+    price:Number(document.getElementById("price").value),
+    photo,
+    description:document.getElementById("description").value.trim(),
+    stock:Number(document.getElementById("stock").value)
+  };
+  if(!p.name || !Number.isFinite(p.price) || p.price<0 ||
+     !Number.isInteger(p.stock) || p.stock<0){
+    alert("সঠিক পণ্যের তথ্য দিন।");return;
+  }
+
+  const previous=products.slice();
+  if(id) products=products.map(x=>x.id===id?p:x);
+  else products.unshift(p);
+
+  if(!persist()){products=previous;return;}
+  resetForm();
+  renderProducts();
+  renderAdminProducts();
+  document.getElementById("adminMessage").textContent="পণ্য সেভ হয়েছে।";
+}
+
+function editProduct(id){
+  if(!isAdmin)return;
+  const p=products.find(x=>x.id===id);
+  if(!p)return;
+  document.getElementById("editId").value=p.id;
+  document.getElementById("pname").value=p.name;
+  document.getElementById("price").value=p.price;
+  document.getElementById("description").value=p.description||"";
+  document.getElementById("stock").value=p.stock;
+  currentPhoto=p.photo;
+  document.getElementById("preview").src=p.photo;
+  document.getElementById("preview").style.display="block";
+  document.getElementById("photo").value="";
+  document.getElementById("productForm").scrollIntoView({behavior:"smooth"});
+}
+
+function deleteProduct(id){
+  if(!isAdmin || !confirm("পণ্যটি মুছে ফেলবেন?"))return;
+  const old=products.slice();
+  products=products.filter(p=>p.id!==id);
+  if(!persist()){products=old;return;}
+  delete cart[id];
+  renderProducts();renderAdminProducts();updateCartCount();
+}
+
+function resetForm(){
+  document.getElementById("productForm").reset();
+  document.getElementById("editId").value="";
+  document.getElementById("stock").value=10;
+  document.getElementById("preview").style.display="none";
+  currentPhoto="";
+}
+
+function renderAdminProducts(){
+  const root=document.getElementById("adminProducts");
+  if(!products.length){root.innerHTML="<p>এখনো কোনো পণ্য নেই।</p>";return;}
+  root.innerHTML=products.map(p=>`
+    <div class="admin-item">
+     <img src="${p.photo}" alt="">
+     <div class="grow"><strong>${safeText(p.name)}</strong><br>
+     ${money(p.price)} · স্টক ${Number(p.stock)}</div>
+     <button class="secondary" onclick="editProduct('${p.id}')">Edit</button>
+     <button class="delete" onclick="deleteProduct('${p.id}')">Delete</button>
+    </div>`).join("");
+}
+
+function addToCart(id){
+  const p=products.find(x=>x.id===id);
+  if(!p || p.stock<=0)return;
+  if((cart[id]||0)>=p.stock){alert("স্টকে আর পণ্য নেই।");return;}
+  cart[id]=(cart[id]||0)+1;
+  updateCartCount();
+}
+
+function updateCartCount(){
+  document.getElementById("cartCount").textContent=
+    Object.values(cart).reduce((a,b)=>a+b,0).toLocaleString("bn-BD");
+}
+
+function cartTotal(){
+  return Object.entries(cart).reduce((sum,[id,qty])=>{
+    const p=products.find(x=>x.id===id);
+    return sum+(p ? Number(p.price)*qty : 0);
+  },0);
+}
+
+function showCart(){
+  const root=document.getElementById("cartItems");
+  const items=Object.entries(cart).filter(([id,qty])=>
+    qty>0 && products.some(p=>p.id===id)
+  );
+  if(!items.length)root.innerHTML="<p>আপনার কার্ট খালি।</p>";
+  else root.innerHTML=items.map(([id,qty])=>{
+    const p=products.find(x=>x.id===id);
+    return `<div class="admin-item">
+      <div class="grow"><strong>${safeText(p.name)}</strong><br>
+      ${money(p.price)} × ${qty}</div>
+      <button class="secondary" onclick="removeCart('${id}')">−</button>
+      <button class="secondary" onclick="addToCart('${id}')">+</button>
+    </div>`;
+  }).join("");
+
+  document.getElementById("cartTotal").textContent="মোট: "+money(cartTotal());
+  document.getElementById("cartModal").style.display="block";
+}
+
+function removeCart(id){
+  if(!cart[id])return;
+  cart[id]--;
+  if(cart[id]<=0)delete cart[id];
+  updateCartCount();
+  showCart();
+}
+
+function checkout(){
+  if(!Object.values(cart).some(q=>q>0)){
+    alert("প্রথমে কার্টে পণ্য যোগ করুন।");return;
+  }
+
+  currentOrder={
+    id:"SHOP-"+Date.now().toString().slice(-8),
+    items:Object.entries(cart).map(([id,qty])=>{
+      const p=products.find(x=>x.id===id);
+      return p ? {name:p.name,price:Number(p.price),qty} : null;
+    }).filter(Boolean),
+    total:cartTotal()
+  };
+
+  document.getElementById("orderNo").value=currentOrder.id;
+  document.getElementById("amount").value=currentOrder.total.toFixed(2);
+  document.getElementById("paymentOrderSummary").innerHTML=
+    currentOrder.items.map(p=>
+      `<p>${safeText(p.name)} × ${p.qty} = ${money(p.price*p.qty)}</p>`
+    ).join("")+`<p class="total">মোট: ${money(currentOrder.total)}</p>`;
+
+  closeModal("cartModal");
+  document.getElementById("paymentModal").style.display="block";
+}
+
+function selectedMethod(){
+  return document.querySelector('input[name="method"]:checked').value;
+}
+
+function selectedPaymentNumber(){
+  return selectedMethod().includes("bKash") ? BKASH_NUMBER : NAGAD_NUMBER;
+}
+
+async function copyNumber(){
+  const number=selectedPaymentNumber();
+  if(!confirm("নির্বাচিত "+selectedMethod()+" নম্বর "+number+
+      "\nনম্বরটি যাচাই করে কপি করুন।"))return;
+  try{
+    await navigator.clipboard.writeText(number);
+    alert("নম্বর কপি হয়েছে।");
+  }catch(e){
+    prompt("নম্বরটি কপি করুন:",number);
+  }
+}
+
+document.getElementById("paymentForm").addEventListener("submit",function(e){
+  e.preventDefault();
+  if(!currentOrder || !currentOrder.items.length){
+    alert("আপনার অর্ডার পাওয়া যায়নি। আবার কার্ট থেকে চেষ্টা করুন।");return;
+  }
+
+  const customer=document.getElementById("customer").value.trim();
+  const trxid=document.getElementById("trxid").value.trim();
+  const sender=document.getElementById("sender").value.trim();
+  const address=document.getElementById("address").value.trim();
+  const note=document.getElementById("note").value.trim();
+  const method=selectedMethod();
+  const paymentNumber=selectedPaymentNumber();
+
+  const itemsText=currentOrder.items.map(p=>
+    "- "+p.name+" × "+p.qty+" = ৳"+(p.price*p.qty).toFixed(2)
+  ).join("\n");
+
+  const message=
+`MY SHOP - NEW ORDER
+--------------------------
+অর্ডার নম্বর: ${currentOrder.id}
+ক্রেতার নাম: ${customer}
+ডেলিভারির ঠিকানা: ${address}
+
+পণ্য:
+${itemsText}
+
+মোট টাকা: ৳${currentOrder.total.toFixed(2)}
+পেমেন্ট পদ্ধতি: ${method}
+পেমেন্ট নম্বর: ${paymentNumber}
+Transaction ID: ${trxid}
+প্রেরকের নম্বর: ${sender}
+অতিরিক্ত তথ্য: ${note||"নেই"}
+
+অর্ডার ও পেমেন্ট অবস্থা: যাচাই বাকি
+অনুগ্রহ করে পেমেন্ট ও স্টক যাচাই করে অর্ডার নিশ্চিত করুন।`;
+
+  const url="https://wa.me/"+WHATSAPP_NUMBER+"?text="+encodeURIComponent(message);
+  const win=window.open(url,"_blank");
+
+  if(!win){
+    alert("WhatsApp খুলতে পারেনি। নিচের লিংকে চাপুন।");
+    const link=document.createElement("a");
+    link.href=url;link.target="_blank";link.rel="noopener";
+    link.textContent="WhatsApp-এ অর্ডার পাঠাতে এখানে চাপুন";
+    link.style.display="block";
+    link.style.padding="12px";
+    document.getElementById("paymentForm").appendChild(link);
+    return;
+  }
+
+  alert("WhatsApp-এ বার্তা খুলবে। সেখানে Send চাপুন। অর্ডার পাঠানো বা পেমেন্ট যাচাই এখনো সম্পন্ন হয়নি।");
+});
+
+renderProducts();
+updateCartCount();
+</script>
+</body>
+</html>
